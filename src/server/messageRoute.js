@@ -5,7 +5,11 @@ const {
 	updateCustomer,
 	deleteCustomer,
 } = require("./database/dbQueries");
-
+const { Client, LocalAuth } = require("whatsapp-web.js");
+// const client = new Client();
+const SESSION_FILE_PATH = "../../session.json";
+const fs = require("fs");
+const qrcode = require("qrcode");
 const sendMessageFunction = require("./message");
 
 router.post("/create", async (req, res) => {
@@ -60,16 +64,56 @@ router.post("/delete", async (req, res) => {
 	}
 });
 
-router.post("/campain", async (req, res) => {
+router.post("/generateqr", async (req, res) => {
 	try {
 		const message = req.body.message;
+		console.log(message);
+		let sessionData,
+			client,
+			session = false;
 
-		const data = sendMessageFunction("523121931090", message);
-		console.log(data);
-		return res.status(200).json({ message: "success" });
+		const generateQR = async (qr) => {
+			try {
+				const dataUrl = await qrcode.toDataURL(qr);
+				session = true;
+				return dataUrl;
+			} catch (err) {
+				console.error(err);
+				return null;
+			}
+		};
+
+		client = new Client({
+			authStrategy: new LocalAuth({
+				session: sessionData,
+			}),
+		});
+
+		client.once("qr", async (qr) => {
+			try {
+				const dataUrl = await generateQR(qr);
+				return res.json({ code: dataUrl });
+			} catch (err) {
+				console.error(err);
+				return res.status(500).send("Error generating QR code.");
+			}
+		});
+
+		client.on("ready", async () => {
+			const response = await getCustomers();
+			for (const item of response) {
+				const phone = item.phone;
+				await client.sendMessage(`521${phone}@c.us`, `${message}`);
+				console.log("Message sent to", phone);
+			}
+		});
+		await client.initialize();
+		if (!session) {
+			return res.status(200).json({ message: "success" });
+		}
 	} catch (error) {
-		console.log(error);
-		return res.status(500).json({ message: "error" });
+		console.error("Error:", error);
+		// res.status(500).send("Error generating QR code");
 	}
 });
 
@@ -81,3 +125,20 @@ router.post("/login", (req, res) => {
 });
 
 module.exports = router;
+// const response = await getCustomers();
+
+// const x = response.map((item) => {
+// 	return new Promise((resolve, reject) => {
+// 		client
+// 			.sendMessage(`521${item.phone}@c.us`, message)
+// 			.then(() => {
+// 				resolve(`Message sent to ${item.phone}`);
+// 			})
+// 			.catch((error) => {
+// 				reject(error);
+// 			});
+// 	});
+// });
+// Promise.all(x).then((values) => {
+// 	console.log(values);
+// });
