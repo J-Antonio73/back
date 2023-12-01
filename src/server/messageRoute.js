@@ -10,7 +10,6 @@ const { Client, LocalAuth } = require("whatsapp-web.js");
 const SESSION_FILE_PATH = "../../session.json";
 const fs = require("fs");
 const qrcode = require("qrcode");
-const sendMessageFunction = require("./message");
 
 router.post("/create", async (req, res) => {
 	try {
