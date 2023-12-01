@@ -124,20 +124,3 @@ router.post("/login", (req, res) => {
 });
 
 module.exports = router;
-// const response = await getCustomers();
-
-// const x = response.map((item) => {
-// 	return new Promise((resolve, reject) => {
-// 		client
-// 			.sendMessage(`521${item.phone}@c.us`, message)
-// 			.then(() => {
-// 				resolve(`Message sent to ${item.phone}`);
-// 			})
-// 			.catch((error) => {
-// 				reject(error);
-// 			});
-// 	});
-// });
-// Promise.all(x).then((values) => {
-// 	console.log(values);
-// });
