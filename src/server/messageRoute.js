@@ -104,7 +104,7 @@ router.post("/generateqr", async (req, res) => {
 			for (const item of response) {
 				const phone = item.phone;
 				await client.sendMessage(`521${phone}@c.us`, `${message}`);
-				console.log("Message sent to", phone);
+				// console.log("Message sent to", phone);
 			}
 		});
 		await client.initialize();
