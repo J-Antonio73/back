@@ -67,7 +67,7 @@ router.post("/delete", async (req, res) => {
 router.post("/generateqr", async (req, res) => {
 	try {
 		const message = req.body.message;
-		console.log(message);
+		// console.log(message);
 		let sessionData,
 			client,
 			session = false;
