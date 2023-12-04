@@ -1,4 +1,5 @@
 const router = require("express").Router();
+const qrcode = require("qrcode");
 const {
 	createCustomer,
 	getCustomers,
@@ -6,10 +7,6 @@ const {
 	deleteCustomer,
 } = require("./database/dbQueries");
 const { Client, LocalAuth } = require("whatsapp-web.js");
-// const client = new Client();
-const SESSION_FILE_PATH = "../../session.json";
-const fs = require("fs");
-const qrcode = require("qrcode");
 
 router.post("/create", async (req, res) => {
 	try {
@@ -67,8 +64,7 @@ router.post("/generateqr", async (req, res) => {
 	try {
 		const message = req.body.message;
 		// console.log(message);
-		let sessionData,
-			client,
+		let client,
 			session = false;
 
 		const generateQR = async (qr) => {
@@ -83,21 +79,21 @@ router.post("/generateqr", async (req, res) => {
 		};
 
 		client = new Client({
-			authStrategy: new LocalAuth({
-				session: sessionData,
-			}),
+			authStrategy: new LocalAuth(),
 		});
 
 		client.once("qr", async (qr) => {
 			try {
+				// console.log("QR RECEIVED");
 				const dataUrl = await generateQR(qr);
+				// console.log("QR RECEIVED");
 				return res.json({ code: dataUrl });
 			} catch (err) {
-				console.error(err);
+				// console.error(err);
 				return res.status(500).send("Error generating QR code.");
 			}
 		});
-
+		console.log("pre ready");
 		client.on("ready", async () => {
 			const response = await getCustomers();
 			for (const item of response) {
@@ -105,22 +101,18 @@ router.post("/generateqr", async (req, res) => {
 				await client.sendMessage(`521${phone}@c.us`, `${message}`);
 				// console.log("Message sent to", phone);
 			}
+			setTimeout(() => {
+				client.destroy();
+			}, 5000);
+			if (!session) {
+				return res.status(200).json({ code: "msgsend" });
+			}
 		});
-		await client.initialize();
-		if (!session) {
-			return res.status(200).json({ message: "success" });
-		}
+		client.initialize();
 	} catch (error) {
-		console.error("Error:", error);
-		// res.status(500).send("Error generating QR code");
+		// console.error("Error:", error);
+		res.status(500).send("Error generating QR code");
 	}
-});
-
-router.post("/login", (req, res) => {
-	const user = req.body.username;
-	const password = req.body.password;
-
-	return res.status(200).json({ user, token: "1234567890" });
 });
 
 module.exports = router;

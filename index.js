@@ -1,7 +1,7 @@
 const express = require("express");
 const app = express();
 const cors = require("cors");
-const msgRoute = require("./src/server/messageRoute");
+const rutas = require("./src/server/routes");
 const PORT = process.env.PORT || 3001;
 
 app.use(
@@ -13,7 +13,7 @@ app.use(
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use("/api", msgRoute);
+app.use("/api", rutas);
 
 app.listen(PORT, () => {
 	console.log(`Server is running on port ${PORT}.`);

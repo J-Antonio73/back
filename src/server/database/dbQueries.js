@@ -2,6 +2,47 @@ const dotenv = require("dotenv").config();
 const mysql = require("mysql");
 const db = require("./config");
 
+const updateToken = (values = []) => {
+	try {
+		const pool = mysql.createPool(db);
+		return new Promise((resolve, reject) => {
+			pool.getConnection((err, connection) => {
+				const sql = "UPDATE usuarios SET access_token = ? WHERE id = ?";
+				connection.query(sql, values, (err, rows) => {
+					if (err) {
+						console.log(err);
+						reject(err);
+					}
+					resolve(rows);
+				});
+			});
+		});
+	} catch (error) {
+		console.log(error);
+	}
+};
+
+const getUser = (values = []) => {
+	try {
+		const pool = mysql.createPool(db);
+		return new Promise((resolve, reject) => {
+			pool.getConnection((err, connection) => {
+				const sql =
+					"SELECT id, username, password FROM usuarios WHERE username = ?";
+				connection.query(sql, values, (err, rows) => {
+					if (err) {
+						console.log(err);
+						reject(err);
+					}
+					resolve(rows);
+				});
+			});
+		});
+	} catch (error) {
+		console.log(error);
+	}
+};
+
 const createCustomer = (values = []) => {
 	try {
 		const pool = mysql.createPool(db);
@@ -90,4 +131,6 @@ module.exports = {
 	getCustomers,
 	updateCustomer,
 	deleteCustomer,
+	updateToken,
+	getUser,
 };
