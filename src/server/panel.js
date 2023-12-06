@@ -1,12 +1,15 @@
 const router = require("express").Router();
 const qrcode = require("qrcode");
+
+const fs = require('fs');
+
 const {
 	createCustomer,
 	getCustomers,
 	updateCustomer,
 	deleteCustomer,
 } = require("./database/dbQueries");
-const { Client, LocalAuth } = require("whatsapp-web.js");
+const { Client, LocalAuth, MessageMedia } = require("whatsapp-web.js");
 
 router.post("/create", async (req, res) => {
 	try {
@@ -63,7 +66,8 @@ router.post("/delete", async (req, res) => {
 router.post("/generateqr", async (req, res) => {
 	try {
 		const message = req.body.message;
-		// console.log(message);
+		const image = req.body.image;
+
 		let client,
 			session = false;
 
@@ -93,24 +97,52 @@ router.post("/generateqr", async (req, res) => {
 				return res.status(500).send("Error generating QR code.");
 			}
 		});
-		console.log("pre ready");
+
+		console.log("Esta madre ya esta jalandoooooooo!");
+
 		client.on("ready", async () => {
-			const response = await getCustomers();
-			for (const item of response) {
-				const phone = item.phone;
-				await client.sendMessage(`521${phone}@c.us`, `${message}`);
-				// console.log("Message sent to", phone);
-			}
-			setTimeout(() => {
-				client.destroy();
-			}, 5000);
-			if (!session) {
-				return res.status(200).json({ code: "msgsend" });
-			}
-		});
+      const response = await getCustomers();
+      for (const item of response) {
+        const phone = item.phone;
+
+        if (image) {
+          const imageFormats = {
+            'data:image/jpeg;base64,': 'jpeg',
+            'data:image/jpg;base64,': 'jpeg',
+            'data:image/png;base64,': 'png',
+            'data:image/gif;base64,': 'gif',
+          };
+
+          let imageFormat = null;
+          let imageData = null;
+
+          for (const format in imageFormats) {
+            if (image.startsWith(format)) {
+              imageFormat = imageFormats[format];
+              imageData = image.replace(format, '');
+              break;
+            }
+          }
+
+          if (imageFormat && imageData) {
+            const media = new MessageMedia(`image/${imageFormat}`, imageData);
+            await client.sendMessage(`521${phone}@c.us`, media);
+          }
+        }
+        
+        await client.sendMessage(`521${phone}@c.us`, `${message}`);
+      }
+      setTimeout(() => {
+        client.destroy();
+      }, 5000);
+      if (!session) {
+        return res.status(200).json({ code: "msgsend" });
+      }
+    });
+
 		client.initialize();
 	} catch (error) {
-		// console.error("Error:", error);
+		console.error("Error:", error);
 		res.status(500).send("Error generating QR code");
 	}
 });
