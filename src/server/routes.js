@@ -1,5 +1,5 @@
 const router = require("express").Router();
-const login = require("./login");
+const login = require("./Login");
 const panel = require("./panel");
 const verifyUser = require("./verifyUser");
 const auth = require("./Auth");
