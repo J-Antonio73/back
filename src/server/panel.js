@@ -88,6 +88,8 @@ router.post("/generateqr", async (req, res) => {
 				headless: true,
 				args: ["--no-sandbox", "--disable-setuid-sandbox"],
 			},
+			userAgent:
+				"WhatsApp/2.2029.4 Chrome/83.0.4103.116 Electron/9.3.5 Safari/537.36",
 		});
 
 		client.once("qr", async (qr) => {
