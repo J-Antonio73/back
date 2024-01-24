@@ -17,7 +17,7 @@ router.post("/", async (req, res) => {
 		const { username, password } = req.body;
 
 		const userName = await getUser(username);
-
+		console.log(userName);
 		const compare = await comparePassword(password, userName[0].password);
 		if (!compare) {
 			return res.json({
