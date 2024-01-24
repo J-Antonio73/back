@@ -1,7 +1,7 @@
 const router = require("express").Router();
 const qrcode = require("qrcode");
 
-const fs = require('fs');
+const fs = require("fs");
 
 const {
 	createCustomer,
@@ -84,6 +84,19 @@ router.post("/generateqr", async (req, res) => {
 
 		client = new Client({
 			authStrategy: new LocalAuth(),
+			puppeteer: {
+				headless: true,
+				args: [
+					"--no-sandbox",
+					"--disable-setuid-sandbox",
+					"--disable-dev-shm-usage",
+					"--disable-accelerated-2d-canvas",
+					"--no-first-run",
+					"--no-zygote",
+					"--single-process", // <- this one doesn't works in Windows
+					"--disable-gpu",
+				],
+			},
 		});
 
 		client.once("qr", async (qr) => {
@@ -101,44 +114,47 @@ router.post("/generateqr", async (req, res) => {
 		console.log("Esta madre ya esta jalandoooooooo!");
 
 		client.on("ready", async () => {
-      const response = await getCustomers();
-      for (const item of response) {
-        const phone = item.phone;
+			const response = await getCustomers();
+			for (const item of response) {
+				const phone = item.phone;
 
-        if (image) {
-          const imageFormats = {
-            'data:image/jpeg;base64,': 'jpeg',
-            'data:image/jpg;base64,': 'jpeg',
-            'data:image/png;base64,': 'png',
-            'data:image/gif;base64,': 'gif',
-          };
+				if (image) {
+					const imageFormats = {
+						"data:image/jpeg;base64,": "jpeg",
+						"data:image/jpg;base64,": "jpeg",
+						"data:image/png;base64,": "png",
+						"data:image/gif;base64,": "gif",
+					};
 
-          let imageFormat = null;
-          let imageData = null;
+					let imageFormat = null;
+					let imageData = null;
 
-          for (const format in imageFormats) {
-            if (image.startsWith(format)) {
-              imageFormat = imageFormats[format];
-              imageData = image.replace(format, '');
-              break;
-            }
-          }
+					for (const format in imageFormats) {
+						if (image.startsWith(format)) {
+							imageFormat = imageFormats[format];
+							imageData = image.replace(format, "");
+							break;
+						}
+					}
 
-          if (imageFormat && imageData) {
-            const media = new MessageMedia(`image/${imageFormat}`, imageData);
-            await client.sendMessage(`521${phone}@c.us`, media);
-          }
-        }
-        
-        await client.sendMessage(`521${phone}@c.us`, `${message}`);
-      }
-      setTimeout(() => {
-        client.destroy();
-      }, 5000);
-      if (!session) {
-        return res.status(200).json({ code: "msgsend" });
-      }
-    });
+					if (imageFormat && imageData) {
+						const media = new MessageMedia(
+							`image/${imageFormat}`,
+							imageData
+						);
+						await client.sendMessage(`521${phone}@c.us`, media);
+					}
+				}
+
+				await client.sendMessage(`521${phone}@c.us`, `${message}`);
+			}
+			setTimeout(() => {
+				client.destroy();
+			}, 5000);
+			if (!session) {
+				return res.status(200).json({ code: "msgsend" });
+			}
+		});
 
 		client.initialize();
 	} catch (error) {
