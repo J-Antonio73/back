@@ -3,6 +3,7 @@ const bodyParser = require("body-parser");
 const app = express();
 const cors = require("cors");
 const rutas = require("./src/server/routes");
+const puppeteer = require("puppeteer");
 const PORT = process.env.PORT || 3001;
 
 // app.use(
@@ -30,6 +31,28 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use("/api", rutas);
+
+// Puppeteer configuration
+(async () => {
+	try {
+		const browser = await puppeteer.launch({
+			executablePath: process.env.CHROME_BIN || null,
+			args: [
+				"--no-sandbox",
+				"--disable-setuid-sandbox",
+				"--disable-dev-shm-usage",
+				"--disable-features=site-per-process",
+				"--disable-gpu",
+			],
+		});
+
+		// Your Puppeteer code
+
+		await browser.close();
+	} catch (error) {
+		console.error("Error launching Puppeteer:", error);
+	}
+})();
 
 app.listen(PORT, () => {
 	console.log(`Server is running on port ${PORT}.`);
