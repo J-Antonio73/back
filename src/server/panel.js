@@ -2,7 +2,14 @@ const router = require("express").Router();
 const qrcode = require("qrcode");
 
 const fs = require("fs");
+const path = require("path");
+const sessionDirectory = path.join(__dirname, "session");
 
+// Verificar si el directorio existe
+if (!fs.existsSync(sessionDirectory)) {
+	// Crear el directorio si no existe
+	fs.mkdirSync(sessionDirectory);
+}
 const {
 	createCustomer,
 	getCustomers,
@@ -83,9 +90,7 @@ router.post("/generateqr", async (req, res) => {
 		};
 
 		client = new Client({
-			authStrategy: new LocalAuth({
-				dataPath: "../session",
-			}),
+			authStrategy: new LocalAuth(),
 			puppeteer: {
 				headless: true,
 				args: ["--no-sandbox", "--disable-setuid-sandbox"],
@@ -96,85 +101,69 @@ router.post("/generateqr", async (req, res) => {
 			try {
 				// console.log("QR RECEIVED");
 				const dataUrl = await generateQR(qr);
-				// console.log("QR RECEIVED");
+				console.log("QR RECEIVED");
 				return res.json({ code: dataUrl });
 			} catch (err) {
-				// console.error(err);
-				return res.status(500).send("Error generating QR code.");
+				console.error(err);
+				if (!res.headersSent)
+					return res.status(500).send("Error generating QR code.");
 			}
 		});
 
 		console.log("Esta madre ya esta jalandoooooooo!");
 
 		client.on("ready", async () => {
+			console.log("Client is ready!");
 			const response = await getCustomers();
-			const promises = [];
-
 			for (const item of response) {
-				promises.push(processItem(item, image, message, client));
+				const phone = item.phone.replace(/\s/g, "");
+
+				if (image) {
+					const imageFormats = {
+						"data:image/jpeg;base64,": "jpeg",
+						"data:image/jpg;base64,": "jpeg",
+						"data:image/png;base64,": "png",
+						"data:image/gif;base64,": "gif",
+					};
+
+					let imageFormat = null;
+					let imageData = null;
+
+					for (const format in imageFormats) {
+						if (image.startsWith(format)) {
+							imageFormat = imageFormats[format];
+							imageData = image.replace(format, "");
+							break;
+						}
+					}
+
+					if (imageFormat && imageData) {
+						const media = new MessageMedia(
+							`image/${imageFormat}`,
+							imageData
+						);
+						await client.sendMessage(`521${phone}@c.us`, media);
+					}
+				}
+
+				await client.sendMessage(`521${phone}@c.us`, `${message}`);
 			}
-
-			// Espera a que todas las promesas se resuelvan
-			await Promise.all(promises)
-				.then((results) => {
-					console.log("All done", results);
+			setTimeout(() => {
+				client.destroy();
+				if (!res.headersSent)
 					return res.status(200).json({ code: "msgsend" });
-				})
-				.catch((e) => {
-					console.error("Error", e);
-					return res.status(500).send("Error sending messages");
-				})
-				.finally(() => {
-					client.destroy();
-				});
-
-			// Una vez que todas las promesas se han resuelto, puedes devolver una respuesta
-
-			// setTimeout(() => {
-			// 	client.destroy();
-
-			// 	return res.status(200).json({ code: "msgsend" });
-			// }, 5000);
-			// if (!session) {
-			// }
+			}, 5000);
+			if (!session) {
+			}
 		});
-
+		console.log("pre initialize");
 		client.initialize();
+		console.log("post initialize");
+		// return res.status(200).json({ code: "msgsend" });
 	} catch (error) {
 		console.error("Error:", error);
-		res.status(500).send("Error generating QR code");
+		if (!res.headersSent) res.status(500).send("Error generating QR code");
 	}
 });
-
-async function processItem(item, image, message, client) {
-	const phone = item.phone.replace(/\s/g, "");
-
-	if (image) {
-		const imageFormats = {
-			"data:image/jpeg;base64,": "jpeg",
-			"data:image/jpg;base64,": "jpeg",
-			"data:image/png;base64,": "png",
-			"data:image/gif;base64,": "gif",
-		};
-
-		let imageFormat = null;
-		let imageData = null;
-
-		for (const format in imageFormats) {
-			if (image.startsWith(format)) {
-				imageFormat = imageFormats[format];
-				imageData = image.replace(format, "");
-				break;
-			}
-		}
-
-		if (imageFormat && imageData) {
-			const media = new MessageMedia(`image/${imageFormat}`, imageData);
-			await client.sendMessage(`521${phone}@c.us`, media);
-		}
-	}
-
-	await client.sendMessage(`521${phone}@c.us`, `${message}`);
-}
 
 module.exports = router;
