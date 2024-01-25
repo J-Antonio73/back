@@ -83,7 +83,9 @@ router.post("/generateqr", async (req, res) => {
 		};
 
 		client = new Client({
-			authStrategy: new LocalAuth(),
+			authStrategy: new LocalAuth({
+				dataPath: "../session",
+			}),
 			puppeteer: {
 				headless: true,
 				args: ["--no-sandbox", "--disable-setuid-sandbox"],
@@ -106,45 +108,35 @@ router.post("/generateqr", async (req, res) => {
 
 		client.on("ready", async () => {
 			const response = await getCustomers();
+			const promises = [];
+
 			for (const item of response) {
-				const phone = item.phone.trim();
-
-				if (image) {
-					const imageFormats = {
-						"data:image/jpeg;base64,": "jpeg",
-						"data:image/jpg;base64,": "jpeg",
-						"data:image/png;base64,": "png",
-						"data:image/gif;base64,": "gif",
-					};
-
-					let imageFormat = null;
-					let imageData = null;
-
-					for (const format in imageFormats) {
-						if (image.startsWith(format)) {
-							imageFormat = imageFormats[format];
-							imageData = image.replace(format, "");
-							break;
-						}
-					}
-
-					if (imageFormat && imageData) {
-						const media = new MessageMedia(
-							`image/${imageFormat}`,
-							imageData
-						);
-						await client.sendMessage(`521${phone}@c.us`, media);
-					}
-				}
-
-				await client.sendMessage(`521${phone}@c.us`, `${message}`);
+				promises.push(processItem(item, image, message, client));
 			}
-			setTimeout(() => {
-				client.destroy();
-			}, 5000);
-			if (!session) {
-				return res.status(200).json({ code: "msgsend" });
-			}
+
+			// Espera a que todas las promesas se resuelvan
+			await Promise.all(promises)
+				.then((results) => {
+					console.log("All done", results);
+					return res.status(200).json({ code: "msgsend" });
+				})
+				.catch((e) => {
+					console.error("Error", e);
+					return res.status(500).send("Error sending messages");
+				})
+				.finally(() => {
+					client.destroy();
+				});
+
+			// Una vez que todas las promesas se han resuelto, puedes devolver una respuesta
+
+			// setTimeout(() => {
+			// 	client.destroy();
+
+			// 	return res.status(200).json({ code: "msgsend" });
+			// }, 5000);
+			// if (!session) {
+			// }
 		});
 
 		client.initialize();
@@ -153,5 +145,36 @@ router.post("/generateqr", async (req, res) => {
 		res.status(500).send("Error generating QR code");
 	}
 });
+
+async function processItem(item, image, message, client) {
+	const phone = item.phone.replace(/\s/g, "");
+
+	if (image) {
+		const imageFormats = {
+			"data:image/jpeg;base64,": "jpeg",
+			"data:image/jpg;base64,": "jpeg",
+			"data:image/png;base64,": "png",
+			"data:image/gif;base64,": "gif",
+		};
+
+		let imageFormat = null;
+		let imageData = null;
+
+		for (const format in imageFormats) {
+			if (image.startsWith(format)) {
+				imageFormat = imageFormats[format];
+				imageData = image.replace(format, "");
+				break;
+			}
+		}
+
+		if (imageFormat && imageData) {
+			const media = new MessageMedia(`image/${imageFormat}`, imageData);
+			await client.sendMessage(`521${phone}@c.us`, media);
+		}
+	}
+
+	await client.sendMessage(`521${phone}@c.us`, `${message}`);
+}
 
 module.exports = router;
