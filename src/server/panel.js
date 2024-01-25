@@ -107,7 +107,7 @@ router.post("/generateqr", async (req, res) => {
 		client.on("ready", async () => {
 			const response = await getCustomers();
 			for (const item of response) {
-				const phone = item.phone;
+				const phone = item.phone.trim();
 
 				if (image) {
 					const imageFormats = {
