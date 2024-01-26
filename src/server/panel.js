@@ -94,8 +94,7 @@ router.post("/generateqr", async (req, res) => {
 			puppeteer: {
 				headless: true,
 				args: ["--no-sandbox", "--disable-setuid-sandbox"],
-				executablePath:
-					"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+				executablePath: "/usr/bin/google-chrome-stable",
 			},
 		});
 
