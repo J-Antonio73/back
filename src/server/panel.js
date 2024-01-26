@@ -20,14 +20,15 @@ const { Client, LocalAuth, MessageMedia } = require("whatsapp-web.js");
 
 router.post("/create", async (req, res) => {
 	try {
-		const firstname = req.body.firstname;
-		const lastname = req.body.lastname;
-		const phone = req.body.phone;
-		const email = req.body.email;
+		console.log("req.body", req.body);
+		// const firstname = req.body.firstname;
+		// const lastname = req.body.lastname;
+		// const phone = req.body.phone;
+		// const email = req.body.email;
 
-		const values = [firstname, lastname, phone, email];
+		// const values = [firstname, lastname, phone, email];
 
-		await createCustomer(values);
+		// await createCustomer(values);
 		res.status(200).json({ message: "success" });
 	} catch (error) {
 		res.status(500).json({ message: "error" });
