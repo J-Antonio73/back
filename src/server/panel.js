@@ -94,6 +94,8 @@ router.post("/generateqr", async (req, res) => {
 			puppeteer: {
 				headless: true,
 				args: ["--no-sandbox", "--disable-setuid-sandbox"],
+				executablePath:
+					"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
 			},
 		});
 
@@ -115,37 +117,52 @@ router.post("/generateqr", async (req, res) => {
 		client.on("ready", async () => {
 			console.log("Client is ready!");
 			const response = await getCustomers();
-			for (const item of response) {
-				const phone = item.phone.replace(/\s/g, "");
+			let media = null;
+			if (image) {
+				const imageFormats = {
+					"data:image/jpeg;base64,": "jpeg",
+					"data:image/jpg;base64,": "jpeg",
+					"data:image/png;base64,": "png",
+					"data:image/gif;base64,": "gif",
+					"data:video/mp4;base64,": "mp4",
+				};
 
-				if (image) {
-					const imageFormats = {
-						"data:image/jpeg;base64,": "jpeg",
-						"data:image/jpg;base64,": "jpeg",
-						"data:image/png;base64,": "png",
-						"data:image/gif;base64,": "gif",
-					};
+				let imageFormat = null;
+				let imageData = null;
 
-					let imageFormat = null;
-					let imageData = null;
-
-					for (const format in imageFormats) {
-						if (image.startsWith(format)) {
-							imageFormat = imageFormats[format];
-							imageData = image.replace(format, "");
-							break;
-						}
-					}
-
-					if (imageFormat && imageData) {
-						const media = new MessageMedia(
-							`image/${imageFormat}`,
-							imageData
-						);
-						await client.sendMessage(`521${phone}@c.us`, media);
+				for (const format in imageFormats) {
+					if (image.startsWith(format)) {
+						imageFormat = imageFormats[format];
+						imageData = image.replace(format, "");
+						break;
 					}
 				}
 
+				if (imageFormat && imageData) {
+					try {
+						if (imageFormat === "mp4")
+							media = new MessageMedia("video/mp4", imageData);
+						else
+							media = new MessageMedia(
+								`video/${imageFormat}`,
+								imageData
+							);
+					} catch (error) {
+						console.error("Error al decodificar el video:", error);
+					}
+				}
+			}
+			for (const item of response) {
+				const phone = item.phone.replace(/\s/g, "");
+				if (image && media) {
+					try {
+						await client.sendMessage(`521${phone}@c.us`, media);
+					} catch (error) {
+						console.log("Error al enviar el video:", error);
+					}
+				}
+
+				// console.log(`521${phone}@c.us`, `${message}`);
 				await client.sendMessage(`521${phone}@c.us`, `${message}`);
 			}
 			setTimeout(() => {
