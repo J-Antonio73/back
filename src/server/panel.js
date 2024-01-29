@@ -2,8 +2,12 @@ const router = require("express").Router();
 const qrcode = require("qrcode");
 
 const fs = require("fs");
+const { join, extname } = require("path");
+
 const path = require("path");
 const sessionDirectory = path.join(__dirname, "session");
+const multer = require("multer");
+const xlsx = require("xlsx");
 
 // Verificar si el directorio existe
 if (!fs.existsSync(sessionDirectory)) {
@@ -18,19 +22,52 @@ const {
 } = require("./database/dbQueries");
 const { Client, LocalAuth, MessageMedia } = require("whatsapp-web.js");
 
-router.post("/create", async (req, res) => {
+const CURRENT_DIR = __dirname;
+// const MIMETYPES = ["image/png", "image/jpg", "image/jpeg"];
+const multerProducts = multer({
+	storage: multer.diskStorage({
+		destination: (req, file, cb) => {
+			cb(null, join(CURRENT_DIR, "./excelFile"));
+		},
+		filename: (req, file, cb) => {
+			const ext = extname(file.originalname);
+			const fileName = file.originalname.split(ext)[0];
+			cb(null, `${fileName}-${Date.now()}${ext}`);
+		},
+	}),
+	// limits: { fileSize: 10000000 },
+});
+
+router.post("/create", multerProducts.single("file"), async (req, res) => {
 	try {
-		console.log("req.body", req.body);
-		// const firstname = req.body.firstname;
-		// const lastname = req.body.lastname;
-		// const phone = req.body.phone;
-		// const email = req.body.email;
+		if (req.file) {
+			const filePath = req.file.path;
 
-		// const values = [firstname, lastname, phone, email];
+			const workbook = xlsx.readFile(filePath);
+			const sheetName = workbook.SheetNames[0]; // Suponemos que estamos leyendo la primera hoja
+			const worksheet = workbook.Sheets[sheetName];
 
-		// await createCustomer(values);
+			const jsonData = xlsx.utils.sheet_to_json(worksheet);
+			jsonData.forEach(async (item) => {
+				const firstname = item.nombre ? item.nombre : "";
+				const lastname = item.apellidos ? item.apellidos : "";
+				const phone = item.telefono ? item.telefono : "";
+				const email = item.correo ? item.correo : "";
+				await createCustomer([firstname, lastname, phone, email]);
+			});
+			fs.unlinkSync(filePath);
+		} else {
+			const data = JSON.parse(req.body.data);
+			const firstname = data.firstname;
+			const lastname = data.lastname;
+			const phone = data.phone;
+			const email = data.email;
+			const values = [firstname, lastname, phone, email];
+			await createCustomer(values);
+		}
 		res.status(200).json({ message: "success" });
 	} catch (error) {
+		console.log(error);
 		res.status(500).json({ message: "error" });
 	}
 });
