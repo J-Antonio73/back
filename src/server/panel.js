@@ -35,7 +35,7 @@ const multerProducts = multer({
 			cb(null, `${fileName}-${Date.now()}${ext}`);
 		},
 	}),
-	// limits: { fileSize: 10000000 },
+	limits: { fileSize: 10000000 },
 });
 
 router.post("/create", multerProducts.single("file"), async (req, res) => {
@@ -62,8 +62,7 @@ router.post("/create", multerProducts.single("file"), async (req, res) => {
 			const lastname = data.lastname;
 			const phone = data.phone;
 			const email = data.email;
-			const values = [firstname, lastname, phone, email];
-			await createCustomer(values);
+			await createCustomer([firstname, lastname, phone, email]);
 		}
 		res.status(200).json({ message: "success" });
 	} catch (error) {
@@ -133,6 +132,8 @@ router.post("/generateqr", async (req, res) => {
 				headless: true,
 				args: ["--no-sandbox", "--disable-setuid-sandbox"],
 				executablePath: "/app/.apt/usr/bin/google-chrome",
+				// executablePath:
+				// 	"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
 			},
 		});
 
