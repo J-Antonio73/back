@@ -49,7 +49,6 @@ const updateToken = (values = []) => {
 const getUser = (values = []) => {
 	try {
 		const pool = mysql.createPool(db);
-		console.log(pool);
 		return new Promise((resolve, reject) => {
 			pool.getConnection((err, connection) => {
 				const sql =
