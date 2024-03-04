@@ -182,7 +182,7 @@ router.post("/generateqr", async (req, res) => {
 							media = new MessageMedia("video/mp4", imageData);
 						else
 							media = new MessageMedia(
-								`video/${imageFormat}`,
+								`image/${imageFormat}`,
 								imageData
 							);
 					} catch (error) {
