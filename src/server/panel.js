@@ -127,6 +127,12 @@ router.post("/generateqr", async (req, res) => {
 		};
 
 		client = new Client({
+			webVersion: "2.2409.2",
+			webVersionCache: {
+				type: "remote",
+				remotePath:
+					"https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2409.2.html",
+			},
 			authStrategy: new LocalAuth(),
 			puppeteer: {
 				headless: true,
