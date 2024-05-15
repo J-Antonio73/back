@@ -96,7 +96,7 @@ const createCustomer = (values = []) => {
 		return new Promise((resolve, reject) => {
 			pool.getConnection((err, connection) => {
 				const sql =
-					"INSERT INTO clientes (firstname, lastname, phone, email) VALUES (?, ?, ?, ?)";
+					"INSERT INTO clientes (firstname, lastname, phone, email, `group`) VALUES (?, ?, ?, ?, ?)";
 				connection.query(sql, values, (err, rows) => {
 					if (err) {
 						console.log(err);
@@ -134,13 +134,18 @@ const createCustomer = (values = []) => {
 // 	}
 // };
 
-const getCustomers = () => {
+const getCustomers = (group = 0) => {
 	try {
 		const pool = mysql.createPool(db);
 		return new Promise((resolve, reject) => {
 			pool.getConnection((err, connection) => {
-				const sql =
-					"SELECT *, CONCAT(firstname, ' ', lastname) AS fullname FROM clientes";
+				let sql;
+				if (group === 0) {
+					sql =
+						"SELECT *, CONCAT(firstname, ' ', lastname) AS fullname FROM clientes";
+				} else {
+					sql = `SELECT *, CONCAT(firstname, ' ', lastname) AS fullname FROM clientes WHERE \`group\` = ${group}`;
+				}
 				connection.query(sql, (err, rows) => {
 					if (err) {
 						console.log(err);
@@ -183,7 +188,7 @@ const updateCustomer = (values = []) => {
 		return new Promise((resolve, reject) => {
 			pool.getConnection((err, connection) => {
 				const sql =
-					"UPDATE clientes SET firstname = ?, lastname = ?, phone = ?, email = ? WHERE id = ?";
+					"UPDATE clientes SET firstname = ?, lastname = ?, phone = ?, email = ?, `group` = ? WHERE id = ?";
 				connection.query(sql, values, (err, rows) => {
 					if (err) {
 						console.log(err);
@@ -226,8 +231,29 @@ const deleteCustomer = (id) => {
 		const pool = mysql.createPool(db);
 		return new Promise((resolve, reject) => {
 			pool.getConnection((err, connection) => {
+				// const sql = "DELETE FROM clientes";
 				const sql = "DELETE FROM clientes WHERE id = ?";
 				connection.query(sql, id, (err, rows) => {
+					if (err) {
+						console.log(err);
+						reject(err);
+					}
+					resolve(rows);
+				});
+			});
+		});
+	} catch (error) {
+		console.log(error);
+	}
+};
+
+const getDistritos = () => {
+	try {
+		const pool = mysql.createPool(db);
+		return new Promise((resolve, reject) => {
+			pool.getConnection((err, connection) => {
+				const sql = "SELECT `group` FROM clientes GROUP BY `group`";
+				connection.query(sql, (err, rows) => {
 					if (err) {
 						console.log(err);
 						reject(err);
@@ -267,4 +293,5 @@ module.exports = {
 	deleteCustomer,
 	updateToken,
 	getUser,
+	getDistritos,
 };

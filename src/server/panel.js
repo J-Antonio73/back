@@ -19,6 +19,7 @@ const {
 	getCustomers,
 	updateCustomer,
 	deleteCustomer,
+	getDistritos,
 } = require("./database/dbQueries");
 const { Client, LocalAuth, MessageMedia } = require("whatsapp-web.js");
 
@@ -53,7 +54,14 @@ router.post("/create", multerProducts.single("file"), async (req, res) => {
 				const lastname = item.apellidos ? item.apellidos : "";
 				const phone = item.telefono ? item.telefono : "";
 				const email = item.correo ? item.correo : "";
-				await createCustomer([firstname, lastname, phone, email]);
+				const group = item.grupo ? item.grupo : "0";
+				await createCustomer([
+					firstname,
+					lastname,
+					phone,
+					email,
+					group,
+				]);
 			});
 			fs.unlinkSync(filePath);
 		} else {
@@ -80,15 +88,25 @@ router.get("/get", async (req, res) => {
 	}
 });
 
+router.get("/getdis", async (req, res) => {
+	try {
+		const response = await getDistritos();
+		return res.status(200).json(response);
+	} catch (error) {
+		return res.status(500).json({ message: "error" });
+	}
+});
+
 router.post("/update", async (req, res) => {
 	try {
 		const firstname = req.body.firstname;
 		const lastname = req.body.lastname;
 		const phone = req.body.phone;
 		const email = req.body.email;
+		const dist = req.body.dist;
 		const id = req.body.id;
 
-		const values = [firstname, lastname, phone, email, id];
+		const values = [firstname, lastname, phone, email, dist, id];
 
 		await updateCustomer(values);
 		return res.status(200).json({ message: "success" });
@@ -111,6 +129,7 @@ router.post("/generateqr", async (req, res) => {
 	try {
 		const message = req.body.message;
 		const image = req.body.image;
+		const dist = req.body.dist;
 
 		let client,
 			session = false;
@@ -160,7 +179,7 @@ router.post("/generateqr", async (req, res) => {
 
 		client.on("ready", async () => {
 			console.log("Client is ready!");
-			const response = await getCustomers();
+			const response = await getCustomers(dist);
 			let media = null;
 			if (image) {
 				const imageFormats = {
