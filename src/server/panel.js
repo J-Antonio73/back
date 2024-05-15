@@ -133,7 +133,7 @@ router.post("/generateqr", async (req, res) => {
 				remotePath:
 					"https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2409.2.html",
 			},
-			authStrategy: new LocalAuth(),
+			// authStrategy: new LocalAuth(),
 			puppeteer: {
 				headless: true,
 				args: ["--no-sandbox", "--disable-setuid-sandbox"],
