@@ -90,7 +90,7 @@ const getUser = (values = []) => {
 // 	}
 // };
 
-const createCustomer = (values = []) => {
+const createCustomer = (values = [], index) => {
 	try {
 		const pool = mysql.createPool(db);
 		return new Promise((resolve, reject) => {
@@ -99,7 +99,7 @@ const createCustomer = (values = []) => {
 					"INSERT INTO clientes (firstname, lastname, phone, email, `group`) VALUES (?, ?, ?, ?, ?)";
 				connection.query(sql, values, (err, rows) => {
 					if (err) {
-						console.log(err);
+						console.log(err, "\nINDEX: ", index);
 						reject(err);
 					}
 					resolve(rows);
@@ -107,7 +107,7 @@ const createCustomer = (values = []) => {
 			});
 		});
 	} catch (error) {
-		console.log(error);
+		console.log(error, "\nINDEX: ", index);
 	}
 };
 

@@ -49,19 +49,16 @@ router.post("/create", multerProducts.single("file"), async (req, res) => {
 			const worksheet = workbook.Sheets[sheetName];
 
 			const jsonData = xlsx.utils.sheet_to_json(worksheet);
-			jsonData.forEach(async (item) => {
+			jsonData.forEach(async (item, index) => {
 				const firstname = item.nombre ? item.nombre : "";
 				const lastname = item.apellidos ? item.apellidos : "";
 				const phone = item.telefono ? item.telefono : "";
 				const email = item.correo ? item.correo : "";
 				const group = item.grupo ? item.grupo : "0";
-				await createCustomer([
-					firstname,
-					lastname,
-					phone,
-					email,
-					group,
-				]);
+				await createCustomer(
+					[firstname, lastname, phone, email, group],
+					index
+				);
 			});
 			fs.unlinkSync(filePath);
 		} else {
