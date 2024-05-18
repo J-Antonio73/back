@@ -3,6 +3,16 @@ const bodyParser = require("body-parser");
 const app = express();
 const rutas = require("./src/server/routes");
 const PORT = process.env.PORT || 3001;
+const cors = require("cors");
+
+app.use(
+	cors({
+		origin: `${process.env.CLIENT_URL}`,
+		methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+		credentials: true,
+	})
+);
+
 
 app.use(bodyParser.json({ limit: "50mb" }));
 app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
